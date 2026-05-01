@@ -7,6 +7,7 @@ from collections import Counter
 
 from redis import Redis
 from rq import Queue, Worker
+import time
 
 from app import create_app
 app = create_app(skip_db_create=True)
@@ -59,6 +60,7 @@ def mark_completed(job_id):
 def run_stage(job_id, stage, payload=None):
     try:
         mark_running(job_id, stage)
+        time.sleep(1)
 
         job_path = os.path.join(DATA_DIR, job_id)
         os.makedirs(job_path, exist_ok=True)
