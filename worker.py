@@ -8,7 +8,8 @@ from collections import Counter
 from redis import Redis
 from rq import Queue, Worker
 
-from app import app
+from app import create_app
+app = create_app(skip_db_create=True)
 from models import db, Job, TopWord
 
 

@@ -13,17 +13,15 @@ redis_conn = Redis.from_url(os.environ.get("REDIS_URL", "redis://redis:6379/0"))
 queue = Queue("pipeline", connection=redis_conn)
 
 
-def create_app():
+def create_app(skip_db_create=False):
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.init_app(app)
 
-    with app.app_context():
-        try:
+    if not skip_db_create:
+        with app.app_context():
             db.create_all()
-        except Exception:
-            db.session.rollback()
 
     @app.post("/jobs")
     def create_job():
@@ -98,8 +96,6 @@ def create_app():
     return app
 
 
-app = create_app()
-
-
 if __name__ == "__main__":
+    app = create_app()
     app.run(host="0.0.0.0", port=5000)
