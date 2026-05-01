@@ -15,17 +15,33 @@
 services:
   api:
     build: .
+    command: python app.py
     ports:
-      - "5000:5000"
+      - "5050:5000"
+    environment:
+      DATABASE_URL: postgresql://pipeline:pipeline@db:5432/pipeline
+      REDIS_URL: redis://redis:6379/0
     volumes:
       - pipeline_data:/data
-    # TODO: environment, depends_on, command
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   worker:
     build: .
+    command: python worker.py
+    environment:
+      DATABASE_URL: postgresql://pipeline:pipeline@db:5432/pipeline
+      REDIS_URL: redis://redis:6379/0
     volumes:
       - pipeline_data:/data
-    # TODO: environment, depends_on, command
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   db:
     image: postgres:15
@@ -33,11 +49,19 @@ services:
       POSTGRES_USER: pipeline
       POSTGRES_PASSWORD: pipeline
       POSTGRES_DB: pipeline
-    # TODO: healthcheck
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pipeline -d pipeline"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7
-    # TODO: healthcheck
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   pipeline_data:
